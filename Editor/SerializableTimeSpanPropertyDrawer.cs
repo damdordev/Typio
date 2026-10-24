@@ -63,21 +63,21 @@ namespace Damdor.Typio.Editor
         private string ToString(TimeSpan timeSpan) => mode switch
         {
             SerializableTimeSpanDrawerMode.FullTime => timeSpan.ToString(Format, CultureInfo.InvariantCulture),
-            SerializableTimeSpanDrawerMode.Milliseconds => ((long)timeSpan.TotalMilliseconds).ToString(Format, CultureInfo.InvariantCulture),
-            SerializableTimeSpanDrawerMode.Seconds => ((float)timeSpan.TotalSeconds).ToString(Format, CultureInfo.InvariantCulture),
-            SerializableTimeSpanDrawerMode.Minutes => ((float)timeSpan.TotalMinutes).ToString(Format, CultureInfo.InvariantCulture),
-            SerializableTimeSpanDrawerMode.Hours => ((float)timeSpan.TotalHours).ToString(Format, CultureInfo.InvariantCulture),
-            SerializableTimeSpanDrawerMode.Days => ((float)timeSpan.TotalDays).ToString(Format, CultureInfo.InvariantCulture),
+            SerializableTimeSpanDrawerMode.Milliseconds => ((decimal)timeSpan.Ticks / TimeSpan.TicksPerMillisecond).ToString("G29", CultureInfo.InvariantCulture),
+            SerializableTimeSpanDrawerMode.Seconds => ((decimal)timeSpan.Ticks / TimeSpan.TicksPerSecond).ToString("G29", CultureInfo.InvariantCulture),
+            SerializableTimeSpanDrawerMode.Minutes => ((decimal)timeSpan.Ticks / TimeSpan.TicksPerMinute).ToString("G29", CultureInfo.InvariantCulture),
+            SerializableTimeSpanDrawerMode.Hours => ((decimal)timeSpan.Ticks / TimeSpan.TicksPerHour).ToString("G29", CultureInfo.InvariantCulture),
+            SerializableTimeSpanDrawerMode.Days => ((decimal)timeSpan.Ticks / TimeSpan.TicksPerDay).ToString("G29", CultureInfo.InvariantCulture),
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
 
         private bool TryParse(string text, out TimeSpan result) => mode switch
         {
-            SerializableTimeSpanDrawerMode.FullTime => 
+            SerializableTimeSpanDrawerMode.FullTime =>
                 TimeSpan.TryParseExact(text, Format, CultureInfo.InvariantCulture, TimeSpanStyles.None, out result),
-            SerializableTimeSpanDrawerMode.Milliseconds => 
+            SerializableTimeSpanDrawerMode.Milliseconds =>
                 TryParse(text, 1, out result),
-            SerializableTimeSpanDrawerMode.Seconds => 
+            SerializableTimeSpanDrawerMode.Seconds =>
                 TryParse(text, 1000, out result),
             SerializableTimeSpanDrawerMode.Minutes =>
                 TryParse(text, 60 * 1000, out result),
@@ -91,14 +91,23 @@ namespace Damdor.Typio.Editor
 
         private static bool TryParse(string text, long millisecondMultiplier, out TimeSpan result)
         {
-            if (float.TryParse(text, out var valueMilliseconds))
+            if (decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var valueMilliseconds))
             {
-                result = TimeSpan.FromMilliseconds(millisecondMultiplier * valueMilliseconds);
-                return true;
+                try
+                {
+                    var ticks = decimal.Round(valueMilliseconds * millisecondMultiplier * TimeSpan.TicksPerMillisecond,
+                        0, MidpointRounding.AwayFromZero);
+                    result = new TimeSpan(checked((long)ticks));
+                    return true;
+                }
+                catch (OverflowException)
+                {
+                    // Reject input outside TimeSpan's range without breaking the Inspector.
+                }
             }
             result = TimeSpan.Zero;
             return false;
         }
-        
+
     }
 }

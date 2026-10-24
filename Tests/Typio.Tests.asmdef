@@ -1,14 +1,13 @@
 {
     "name": "Typio.Tests",
     "rootNamespace": "Damdor.Typio.Tests",
-    "references": [],
-    "includePlatforms": [],
+    "references": ["Typio", "Typio.Editor"],
+    "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "optionalUnityReferences": ["TestAssemblies"],
     "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
